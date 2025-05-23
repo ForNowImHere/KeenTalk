@@ -1,14 +1,13 @@
 {
-  "name": "sprunki-sinner-mods",
+  "name": "keentalk",
   "version": "1.0.0",
-  "description": "Social & mod sharing platform - all in one file, served via Express",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
-  "author": "Keen",
-  "license": "MIT",
   "dependencies": {
-    "express": "^4.18.4"
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2",
+    "multer": "^1.4.5"
   }
 }
