@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Serve the HTML directly as a string
 const html = `
 <!DOCTYPE html>
 <html lang="en">
@@ -110,6 +111,18 @@ const html = `
     document.getElementById('toggleDarkMode').onclick = () => {
       document.body.classList.toggle('dark-mode');
     };
+
+    // Dummy front-end logic placeholders
+    document.getElementById('editProfileButton').onclick = () => {
+      document.getElementById('profileEditor').style.display = 'block';
+    };
+    document.getElementById('saveProfileButton').onclick = () => {
+      const name = document.getElementById('profileNameInput').value;
+      const bio = document.getElementById('profileBioInput').value;
+      document.getElementById('profileName').textContent = name;
+      document.getElementById('profileBio').textContent = bio;
+      document.getElementById('profileEditor').style.display = 'none';
+    };
   </script>
 </body>
 </html>
@@ -120,5 +133,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(\`✅ Sprunki is live at http://localhost:\${PORT}\`);
+  console.log(`✅ Sprunki is live at http://localhost:${PORT}`);
 });
