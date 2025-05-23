@@ -1,205 +1,82 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+
 const app = express();
-const port = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
+// Middleware to parse form data
+app.use(express.urlencoded({ extended: true }));
+
+// Multer setup for file uploads (memory storage)
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+// Serve the homepage with an upload form
 app.get('/', (req, res) => {
-  res.send(`<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Sprunki Sinner Mods</title>
-  <style>
-    :root {
-      --bg-color: #121212;
-      --text-color: #fff;
-    }
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      transition: background-color 0.3s, color 0.3s;
-    }
-    .container {
-      width: 90%;
-      margin: auto;
-      padding: 20px;
-    }
-    .hidden {
-      display: none;
-    }
-    button {
-      padding: 10px 15px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
-    input, textarea, select {
-      padding: 10px;
-      margin: 5px 0;
-      border-radius: 5px;
-      border: none;
-    }
-    .group, .post, .user, .file {
-      background: #1e1e1e;
-      padding: 10px;
-      border-radius: 5px;
-      margin-bottom: 10px;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>Sprunki Sinner Mods</h1>
-
-    <!-- Email Sign-up/Login -->
-    <div id="authSection">
-      <input type="email" id="email" placeholder="Email" />
-      <input type="password" id="password" placeholder="Password" />
-      <button onclick="signup()">Sign Up</button>
-      <button onclick="login()">Login</button>
-    </div>
-
-    <!-- Profile Section -->
-    <div id="profileSection" class="hidden">
-      <h2>Welcome, <span id="usernameDisplay">User</span></h2>
-      <textarea id="bioInput" placeholder="Your bio..."></textarea>
-      <button onclick="saveProfile()">Save Bio</button>
-    </div>
-
-    <!-- Post Section -->
-    <div id="postSection" class="hidden">
-      <h2>Post something</h2>
-      <textarea id="postInput" placeholder="Write here..."></textarea>
-      <button onclick="createPost()">Post</button>
-      <div id="postList"></div>
-    </div>
-
-    <!-- Friends Section -->
-    <div id="friendsSection" class="hidden">
-      <h2>Friends</h2>
-      <input type="text" id="friendEmail" placeholder="Friend's email" />
-      <button onclick="addFriend()">Add Friend</button>
-      <div id="friendList"></div>
-    </div>
-
-    <!-- Groups Section -->
-    <div id="groupsSection" class="hidden">
-      <h2>Groups</h2>
-      <input type="text" id="groupName" placeholder="Group name" />
-      <button onclick="createGroup()">Create Group</button>
-      <div id="groupList"></div>
-    </div>
-
-    <!-- File Upload Section -->
-    <div id="uploadSection" class="hidden">
-      <h2>Upload a Game/Mod</h2>
-      <input type="file" id="fileInput" />
-      <button onclick="uploadFile()">Upload</button>
-      <div id="fileList"></div>
-    </div>
-
-    <!-- Call Section -->
-    <div id="callSection" class="hidden">
-      <h2>Call a Friend</h2>
-      <input type="text" id="callTarget" placeholder="Friend's email" />
-      <button onclick="startCall()">Start Call</button>
-      <video id="localVideo" autoplay muted></video>
-      <video id="remoteVideo" autoplay></video>
-    </div>
-  </div>
-
-  <script>
-    const user = {
-      email: '',
-      name: 'User',
-      bio: '',
-      vip: false,
-      darkMode: true,
-    };
-
-    function signup() {
-      user.email = document.getElementById("email").value;
-      user.name = user.email.split("@")[0];
-      alert("Signed up successfully!");
-      enableApp();
-    }
-
-    function login() {
-      user.email = document.getElementById("email").value;
-      user.name = user.email.split("@")[0];
-      alert("Logged in!");
-      enableApp();
-    }
-
-    function enableApp() {
-      document.getElementById("authSection").classList.add("hidden");
-      document.getElementById("profileSection").classList.remove("hidden");
-      document.getElementById("postSection").classList.remove("hidden");
-      document.getElementById("friendsSection").classList.remove("hidden");
-      document.getElementById("groupsSection").classList.remove("hidden");
-      document.getElementById("uploadSection").classList.remove("hidden");
-      document.getElementById("callSection").classList.remove("hidden");
-      document.getElementById("usernameDisplay").innerText = user.name;
-    }
-
-    function saveProfile() {
-      user.bio = document.getElementById("bioInput").value;
-      alert("Profile saved.");
-    }
-
-    function createPost() {
-      const text = document.getElementById("postInput").value;
-      const post = document.createElement("div");
-      post.className = "post";
-      post.textContent = text;
-      document.getElementById("postList").appendChild(post);
-    }
-
-    function addFriend() {
-      const friend = document.getElementById("friendEmail").value;
-      const div = document.createElement("div");
-      div.className = "user";
-      div.textContent = \`Friend: \${friend}\`;
-      document.getElementById("friendList").appendChild(div);
-    }
-
-    function createGroup() {
-      const group = document.getElementById("groupName").value;
-      const div = document.createElement("div");
-      div.className = "group";
-      div.textContent = \`Group: \${group}\`;
-      document.getElementById("groupList").appendChild(div);
-    }
-
-    function uploadFile() {
-      const file = document.getElementById("fileInput").files[0];
-      if(!file) {
-        alert("No file selected!");
-        return;
-      }
-      const div = document.createElement("div");
-      div.className = "file";
-      div.textContent = \`Uploaded: \${file.name}\`;
-      document.getElementById("fileList").appendChild(div);
-    }
-
-    function startCall() {
-      alert("Call started!");
-      // Placeholder for WebRTC implementation
-    }
-  </script>
-</body>
-</html>`);
+  const html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>Sprunki Upload</title>
+      <style>
+        body { font-family: Arial, sans-serif; background: #f0f0f0; padding: 2rem; }
+        form { background: white; padding: 2rem; border-radius: 8px; max-width: 400px; margin: auto; }
+        input[type="file"] { margin-bottom: 1rem; }
+        button { background: #007BFF; color: white; padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .message { margin-top: 1rem; font-weight: bold; }
+      </style>
+    </head>
+    <body>
+      <h1>Sprunki File Upload</h1>
+      <form action="/upload" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" required />
+        <br />
+        <button type="submit">Upload</button>
+      </form>
+    </body>
+    </html>
+  `;
+  res.send(html);
 });
 
-app.listen(port, () => {
-  console.log(\`Server running at http://localhost:\${port}\`);
+// File upload handler
+app.post('/upload', upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).send('❌ No file uploaded. Please select a file and try again.');
+  }
+
+  // For now, just confirm the file upload — no saving
+  const fileName = req.file.originalname;
+
+  // Send back a little HTML response with message and link back to home
+  const responseHTML = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <title>Upload Success</title>
+      <style>
+        body { font-family: Arial, sans-serif; background: #f0f0f0; padding: 2rem; text-align: center; }
+        .success { color: green; font-weight: bold; }
+        a { display: inline-block; margin-top: 1rem; color: #007BFF; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+      </style>
+    </head>
+    <body>
+      <h1 class="success">✅ File "${fileName}" uploaded successfully!</h1>
+      <a href="/">⬅️ Go Back</a>
+    </body>
+    </html>
+  `;
+
+  res.send(responseHTML);
+});
+
+// Start the server
+app.listen(PORT, () => {
+  console.log(`🚀 Sprunki is live at http://localhost:${PORT}`);
 });
