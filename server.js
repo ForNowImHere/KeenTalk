@@ -21,97 +21,190 @@ app.get("/", (req, res) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sprunki Sinner Mods</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f5f5f5; color: #000; margin: 0; padding: 0; transition: all 0.3s; }
-    body.dark-mode { background: #333; color: #fff; }
-    .container { width: 80%; margin: auto; padding: 20px; background: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    body.dark-mode .container { background: #444; }
-    .profile, .post { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
-    .profile img, .post img { width: 50px; height: 50px; border-radius: 50%; }
-    input, textarea, button { padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc; }
-    button { background: #007bff; color: #fff; border: none; cursor: pointer; }
-    button:hover { background: #0056b3; }
+    :root {
+      --bg-color: #121212;
+      --text-color: #fff;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .container {
+      width: 90%;
+      margin: auto;
+      padding: 20px;
+    }
+    .hidden {
+      display: none;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    input, textarea, select {
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 5px;
+      border: none;
+    }
+    .group, .post, .user, .file {
+      background: #1e1e1e;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <div style="text-align:right"><button id="toggleDarkMode">Toggle Dark Mode</button></div>
     <h1>Sprunki Sinner Mods</h1>
-    
-    <div id="profileSection">
-      <div class="profile">
-        <img id="profilePicture" src="${profile.picture || ""}" alt="Profile Picture" />
-        <div>
-          <h3 id="profileName">${profile.name}</h3>
-          <p id="profileBio">${profile.bio}</p>
-          <button id="editProfileButton">Edit Profile</button>
-        </div>
-      </div>
-      <div id="profileEditor" style="display:none">
-        <input type="file" id="profilePictureInput" accept="image/*" />
-        <input type="text" id="profileNameInput" placeholder="Enter your name" />
-        <textarea id="profileBioInput" placeholder="Enter your bio"></textarea>
-        <button id="saveProfileButton">Save Profile</button>
-      </div>
+
+    <!-- Email Sign-up/Login -->
+    <div id="authSection">
+      <input type="email" id="email" placeholder="Email" />
+      <input type="password" id="password" placeholder="Password" />
+      <button onclick="signup()">Sign Up</button>
+      <button onclick="login()">Login</button>
     </div>
 
-    <h2>What's on your mind?</h2>
-    <textarea id="newPostInput" placeholder="Write something..."></textarea>
-    <button id="postButton">Post</button>
-    <div id="posts">${posts.map(p => `<div class="post"><strong>${p}</strong></div>`).join('')}</div>
+    <!-- Profile Section -->
+    <div id="profileSection" class="hidden">
+      <h2>Welcome, <span id="usernameDisplay">User</span></h2>
+      <textarea id="bioInput" placeholder="Your bio..."></textarea>
+      <button onclick="saveProfile()">Save Bio</button>
+    </div>
 
-    <h2>Upload Files</h2>
-    <form id="uploadForm" enctype="multipart/form-data" method="POST" action="/upload">
-      <input type="file" name="file" />
-      <button type="submit">Upload</button>
-    </form>
-    <ul>${uploadedFiles.map(f => `<li>${f}</li>`).join('')}</ul>
+    <!-- Post Section -->
+    <div id="postSection" class="hidden">
+      <h2>Post something</h2>
+      <textarea id="postInput" placeholder="Write here..."></textarea>
+      <button onclick="createPost()">Post</button>
+      <div id="postList"></div>
+    </div>
 
-    <h2>Friends</h2>
-    <input type="text" id="friendNameInput" placeholder="Friend's name" />
-    <button id="addFriendButton">Add Friend</button>
-    <ul id="friendList"></ul>
+    <!-- Friends Section -->
+    <div id="friendsSection" class="hidden">
+      <h2>Friends</h2>
+      <input type="text" id="friendEmail" placeholder="Friend's email" />
+      <button onclick="addFriend()">Add Friend</button>
+      <div id="friendList"></div>
+    </div>
 
-    <h2>Calls</h2>
-    <input type="text" id="callUserInput" placeholder="User to call" />
-    <button id="startCallButton">Start Call</button>
-    <video id="localVideo" autoplay muted></video>
-    <video id="remoteVideo" autoplay></video>
+    <!-- Groups Section -->
+    <div id="groupsSection" class="hidden">
+      <h2>Groups</h2>
+      <input type="text" id="groupName" placeholder="Group name" />
+      <button onclick="createGroup()">Create Group</button>
+      <div id="groupList"></div>
+    </div>
+
+    <!-- File Upload Section -->
+    <div id="uploadSection" class="hidden">
+      <h2>Upload a Game/Mod</h2>
+      <input type="file" id="fileInput" />
+      <button onclick="uploadFile()">Upload</button>
+      <div id="fileList"></div>
+    </div>
+
+    <!-- Call Section -->
+    <div id="callSection" class="hidden">
+      <h2>Call a Friend</h2>
+      <input type="text" id="callTarget" placeholder="Friend's email" />
+      <button onclick="startCall()">Start Call</button>
+      <video id="localVideo" autoplay muted></video>
+      <video id="remoteVideo" autoplay></video>
+    </div>
   </div>
 
   <script>
-    document.getElementById("toggleDarkMode").onclick = () => document.body.classList.toggle("dark-mode");
-
-    document.getElementById("editProfileButton").onclick = () => {
-      document.getElementById("profileEditor").style.display = "block";
+    const user = {
+      email: '',
+      name: 'User',
+      bio: '',
+      vip: false,
+      darkMode: true,
     };
 
-    document.getElementById("saveProfileButton").onclick = async () => {
-      const name = document.getElementById("profileNameInput").value;
-      const bio = document.getElementById("profileBioInput").value;
-      const pic = document.getElementById("profilePictureInput").files[0];
-      const reader = new FileReader();
-      reader.onload = () => {
-        fetch('/updateProfile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, bio, picture: reader.result })
-        }).then(() => location.reload());
-      };
-      if (pic) reader.readAsDataURL(pic);
-      else reader.onload();
-    };
+    function signup() {
+      user.email = document.getElementById("email").value;
+      user.name = user.email.split("@")[0];
+      alert("Signed up successfully!");
+      enableApp();
+    }
 
-    document.getElementById("postButton").onclick = () => {
-      const post = document.getElementById("newPostInput").value;
-      fetch('/post', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ post })
-      }).then(() => location.reload());
-    };
+    function login() {
+      user.email = document.getElementById("email").value;
+      user.name = user.email.split("@")[0];
+      alert("Logged in!");
+      enableApp();
+    }
+
+    function enableApp() {
+      document.getElementById("authSection").classList.add("hidden");
+      document.getElementById("profileSection").classList.remove("hidden");
+      document.getElementById("postSection").classList.remove("hidden");
+      document.getElementById("friendsSection").classList.remove("hidden");
+      document.getElementById("groupsSection").classList.remove("hidden");
+      document.getElementById("uploadSection").classList.remove("hidden");
+      document.getElementById("callSection").classList.remove("hidden");
+      document.getElementById("usernameDisplay").innerText = user.name;
+    }
+
+    function saveProfile() {
+      user.bio = document.getElementById("bioInput").value;
+      alert("Profile saved.");
+    }
+
+    function createPost() {
+      const text = document.getElementById("postInput").value;
+      const post = document.createElement("div");
+      post.className = "post";
+      post.textContent = text;
+      document.getElementById("postList").appendChild(post);
+    }
+
+    function addFriend() {
+      const friend = document.getElementById("friendEmail").value;
+      const div = document.createElement("div");
+      div.className = "user";
+      div.textContent = `Friend: ${friend}`;
+      document.getElementById("friendList").appendChild(div);
+    }
+
+    function createGroup() {
+      const group = document.getElementById("groupName").value;
+      const div = document.createElement("div");
+      div.className = "group";
+      div.textContent = `Group: ${group}`;
+      document.getElementById("groupList").appendChild(div);
+    }
+
+    function uploadFile() {
+      const file = document.getElementById("fileInput").files[0];
+      const div = document.createElement("div");
+      div.className = "file";
+      div.textContent = `Uploaded: ${file.name}`;
+      document.getElementById("fileList").appendChild(div);
+    }
+
+    function startCall() {
+      alert("Call started!");
+      // Placeholder for WebRTC implementation
+    }
   </script>
 </body>
-</html>`);
+</html>);
 });
 
 // Profile update route
