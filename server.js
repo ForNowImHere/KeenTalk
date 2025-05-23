@@ -1,49 +1,56 @@
 // server.js
-
-const express = require('express');
-const { v4: uuidV4 } = require('uuid');
-const { Server } = require('socket.io');
-const http = require('http');
-const { ExpressPeerServer } = require('peer');
-
+const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
-const peerServer = ExpressPeerServer(server, {
-  debug: true,
-  path: '/'
-});
+const path = require("path");
 
-// Static files from /public
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, "public")));
 
-// PeerJS server mount
-app.use('/peerjs', peerServer);
+let users = {};
 
-// Generate a random room URL
-app.get('/', (req, res) => {
-  res.redirect(`/room/${uuidV4()}`);
-});
+io.on("connection", (socket) => {
+  console.log("A user connected:", socket.id);
 
-// Serve room HTML
-app.get('/room/:room', (req, res) => {
-  res.sendFile(__dirname + '/public/room.html');
-});
+  socket.on("register", (username) => {
+    users[username] = socket.id;
+    io.emit("userlist", Object.keys(users));
+  });
 
-// Handle socket connection for signaling
-io.on('connection', socket => {
-  socket.on('join-room', (roomId, userId) => {
-    socket.join(roomId);
-    socket.to(roomId).emit('user-connected', userId);
+  socket.on("call-user", (data) => {
+    const targetSocket = users[data.to];
+    if (targetSocket) {
+      io.to(targetSocket).emit("incoming-call", {
+        from: data.from,
+        offer: data.offer,
+      });
+    }
+  });
 
-    socket.on('disconnect', () => {
-      socket.to(roomId).emit('user-disconnected', userId);
-    });
+  socket.on("answer-call", (data) => {
+    const targetSocket = users[data.to];
+    if (targetSocket) {
+      io.to(targetSocket).emit("call-answered", {
+        answer: data.answer,
+        from: data.from,
+      });
+    }
+  });
+
+  socket.on("disconnect", () => {
+    for (const [username, id] of Object.entries(users)) {
+      if (id === socket.id) {
+        delete users[username];
+        break;
+      }
+    }
+    io.emit("userlist", Object.keys(users));
+    console.log("User disconnected:", socket.id);
   });
 });
 
-// Start server
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`🟢 KeenTalk server running at http://localhost:${PORT}`);
+server.listen(3000, () => {
+  console.log("Server running on http://localhost:3000");
 });
