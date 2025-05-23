@@ -2,6 +2,9 @@ const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Serve static files if you add any later (like images or stylesheets)
+app.use(express.static('public'));
+
 // Serve the HTML directly as a string
 const html = `
 <!DOCTYPE html>
@@ -68,6 +71,7 @@ const html = `
     </div>
     <h1>Sprunki Sinner Mods</h1>
 
+    <!-- Profile Section -->
     <div id="profileSection">
       <div class="profile">
         <img id="profilePicture" src="" alt="Profile Picture" />
@@ -85,21 +89,25 @@ const html = `
       </div>
     </div>
 
+    <!-- Post Section -->
     <h2>What's on your mind?</h2>
     <textarea id="newPostInput" placeholder="Write something..."></textarea>
     <button id="postButton">Post</button>
     <div id="posts"></div>
 
+    <!-- File Upload Section -->
     <h2>Upload Files</h2>
-    <input type="file" id="fileInput" accept=".html,.sb3,.png,.jpg,.mp4" />
+    <input type="file" id="fileInput" />
     <button id="uploadFileButton">Upload</button>
     <div id="fileList"></div>
 
+    <!-- Friends Section -->
     <h2>Friends</h2>
     <input type="text" id="friendNameInput" placeholder="Friend's name" />
     <button id="addFriendButton">Add Friend</button>
     <ul id="friendList"></ul>
 
+    <!-- Call Section -->
     <h2>Calls</h2>
     <input type="text" id="callUserInput" placeholder="User to call" />
     <button id="startCallButton">Start Call</button>
@@ -108,7 +116,69 @@ const html = `
   </div>
 
   <script>
-    // Add JS logic here
+    // Dark mode toggle
+    document.getElementById("toggleDarkMode").onclick = () => {
+      document.body.classList.toggle("dark-mode");
+    };
+
+    // Profile edit logic
+    const editBtn = document.getElementById("editProfileButton");
+    const editor = document.getElementById("profileEditor");
+    const nameEl = document.getElementById("profileName");
+    const bioEl = document.getElementById("profileBio");
+    const nameInput = document.getElementById("profileNameInput");
+    const bioInput = document.getElementById("profileBioInput");
+    const pictureInput = document.getElementById("profilePictureInput");
+    const pictureEl = document.getElementById("profilePicture");
+
+    editBtn.onclick = () => {
+      editor.style.display = "block";
+    };
+
+    document.getElementById("saveProfileButton").onclick = () => {
+      nameEl.textContent = nameInput.value || "User Name";
+      bioEl.textContent = bioInput.value || "This is your bio. Add something cool!";
+      if (pictureInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          pictureEl.src = reader.result;
+        };
+        reader.readAsDataURL(pictureInput.files[0]);
+      }
+      editor.style.display = "none";
+    };
+
+    // Post logic
+    document.getElementById("postButton").onclick = () => {
+      const content = document.getElementById("newPostInput").value;
+      if (!content.trim()) return;
+      const post = document.createElement("div");
+      post.className = "post";
+      post.innerHTML = \`<img src="\${pictureEl.src}" alt="pfp"><div><p>\${content}</p></div>\`;
+      document.getElementById("posts").prepend(post);
+      document.getElementById("newPostInput").value = "";
+    };
+
+    // File upload logic (just display)
+    document.getElementById("uploadFileButton").onclick = () => {
+      const fileInput = document.getElementById("fileInput");
+      if (fileInput.files.length === 0) return;
+      const file = fileInput.files[0];
+      const entry = document.createElement("div");
+      entry.textContent = "Uploaded: " + file.name;
+      document.getElementById("fileList").appendChild(entry);
+      fileInput.value = ""; // reset
+    };
+
+    // Add friend logic
+    document.getElementById("addFriendButton").onclick = () => {
+      const friendName = document.getElementById("friendNameInput").value.trim();
+      if (!friendName) return;
+      const li = document.createElement("li");
+      li.textContent = friendName;
+      document.getElementById("friendList").appendChild(li);
+      document.getElementById("friendNameInput").value = "";
+    };
   </script>
 </body>
 </html>
@@ -119,5 +189,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`✅ Sprunki is live at http://localhost:${PORT}`);
+  console.log(\`✅ Sprunki is live at http://localhost:\${PORT}\`);
 });
