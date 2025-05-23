@@ -131,5 +131,5 @@ app.get('/:imageName', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(\`✅ Sprunki is live at http://localhost:\${PORT}\`);
+  console.log(`✅ Sprunki is live at http://localhost:${PORT}`);
 });
