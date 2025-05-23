@@ -1,56 +1,118 @@
-// server.js
-const express = require("express");
-const http = require("http");
-const { Server } = require("socket.io");
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
-const path = require("path");
-
-app.use(express.static(path.join(__dirname, "public")));
-
-let users = {};
-
-io.on("connection", (socket) => {
-  console.log("A user connected:", socket.id);
-
-  socket.on("register", (username) => {
-    users[username] = socket.id;
-    io.emit("userlist", Object.keys(users));
-  });
-
-  socket.on("call-user", (data) => {
-    const targetSocket = users[data.to];
-    if (targetSocket) {
-      io.to(targetSocket).emit("incoming-call", {
-        from: data.from,
-        offer: data.offer,
-      });
-    }
-  });
-
-  socket.on("answer-call", (data) => {
-    const targetSocket = users[data.to];
-    if (targetSocket) {
-      io.to(targetSocket).emit("call-answered", {
-        answer: data.answer,
-        from: data.from,
-      });
-    }
-  });
-
-  socket.on("disconnect", () => {
-    for (const [username, id] of Object.entries(users)) {
-      if (id === socket.id) {
-        delete users[username];
-        break;
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sprunki Sinner Mods</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f5f5f5;
+        color: #000;
+        transition: background-color 0.3s, color 0.3s;
       }
-    }
-    io.emit("userlist", Object.keys(users));
-    console.log("User disconnected:", socket.id);
-  });
-});
+      body.dark-mode {
+        background-color: #333;
+        color: #fff;
+      }
+      .container {
+        width: 80%;
+        margin: auto;
+        padding: 20px;
+        background: #fff;
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+      }
+      body.dark-mode .container {
+        background: #444;
+        color: #fff;
+      }
+      .profile,
+      .post {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+      .profile img,
+      .post img {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+      }
+      textarea,
+      input,
+      button {
+        margin: 5px 0;
+        padding: 10px;
+        border-radius: 5px;
+      }
+      button {
+        background: #007bff;
+        color: white;
+        cursor: pointer;
+        border: none;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div style="text-align: right">
+        <button id="toggleDarkMode">Toggle Dark Mode</button>
+      </div>
+      <h1>Sprunki Sinner Mods</h1>
 
-server.listen(3000, () => {
-  console.log("Server running on http://localhost:3000");
-});
+      <!-- Profile Section -->
+      <div id="profileSection">
+        <div class="profile">
+          <img id="profilePicture" src="" alt="Profile Picture" />
+          <div>
+            <h3 id="profileName">User Name</h3>
+            <p id="profileBio">This is your bio. Add something cool!</p>
+            <button id="editProfileButton">Edit Profile</button>
+          </div>
+        </div>
+        <div id="profileEditor" style="display: none">
+          <input type="file" id="profilePictureInput" accept="image/*" />
+          <input type="text" id="profileNameInput" placeholder="Enter your name" />
+          <textarea id="profileBioInput" placeholder="Enter your bio"></textarea>
+          <button id="saveProfileButton">Save Profile</button>
+        </div>
+      </div>
+
+      <!-- Post Section -->
+      <h2>What's on your mind?</h2>
+      <textarea id="newPostInput" placeholder="Write something..."></textarea>
+      <button id="postButton">Post</button>
+      <div id="posts"></div>
+
+      <!-- File Upload Section -->
+      <h2>Upload Files</h2>
+      <input type="file" id="fileInput" accept=".html,.sb3,.png,.jpg,.mp4" />
+      <button id="uploadFileButton">Upload</button>
+      <div id="fileList"></div>
+
+      <!-- Friends and Call Section -->
+      <h2>Friends</h2>
+      <input type="text" id="friendNameInput" placeholder="Friend's name" />
+      <button id="addFriendButton">Add Friend</button>
+      <ul id="friendList"></ul>
+
+      <h2>Calls</h2>
+      <input type="text" id="callUserInput" placeholder="User to call" />
+      <button id="startCallButton">Start Call</button>
+      <video id="localVideo" autoplay muted></video>
+      <video id="remoteVideo" autoplay></video>
+    </div>
+
+    <!-- Socket.io and call logic will go here -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      // More frontend logic will be appended after backend setup.
+    </script>
+  </body>
+</html>
