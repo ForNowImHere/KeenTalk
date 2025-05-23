@@ -1,19 +1,8 @@
-const express = require("express");
-const multer = require("multer");
-const path = require("path");
+const express = require('express');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// In-memory storage for profile and posts
-let profile = { name: "User Name", bio: "This is your bio.", picture: "" };
-let posts = [];
-let uploadedFiles = [];
-
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
-
-// Main route
-app.get("/", (req, res) => {
+app.get('/', (req, res) => {
   res.send(`<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -178,7 +167,7 @@ app.get("/", (req, res) => {
       const friend = document.getElementById("friendEmail").value;
       const div = document.createElement("div");
       div.className = "user";
-      div.textContent = `Friend: ${friend}`;
+      div.textContent = \`Friend: \${friend}\`;
       document.getElementById("friendList").appendChild(div);
     }
 
@@ -186,15 +175,19 @@ app.get("/", (req, res) => {
       const group = document.getElementById("groupName").value;
       const div = document.createElement("div");
       div.className = "group";
-      div.textContent = `Group: ${group}`;
+      div.textContent = \`Group: \${group}\`;
       document.getElementById("groupList").appendChild(div);
     }
 
     function uploadFile() {
       const file = document.getElementById("fileInput").files[0];
+      if(!file) {
+        alert("No file selected!");
+        return;
+      }
       const div = document.createElement("div");
       div.className = "file";
-      div.textContent = `Uploaded: ${file.name}`;
+      div.textContent = \`Uploaded: \${file.name}\`;
       document.getElementById("fileList").appendChild(div);
     }
 
@@ -207,27 +200,6 @@ app.get("/", (req, res) => {
 </html>`);
 });
 
-// Profile update route
-app.post("/updateProfile", express.json(), (req, res) => {
-  profile = req.body;
-  res.sendStatus(200);
-});
-
-// Add new post
-app.post("/post", express.json(), (req, res) => {
-  posts.push(req.body.post);
-  res.sendStatus(200);
-});
-
-// Handle file upload
-app.post("/upload", upload.single("file"), (req, res) => {
-  if (req.file) {
-    uploadedFiles.push(req.file.originalname);
-  }
-  res.redirect("/");
-});
-
-// Start server
 app.listen(port, () => {
-  console.log(`KeenTalk backend is running on port ${port}`);
+  console.log(\`Server running at http://localhost:\${port}\`);
 });
