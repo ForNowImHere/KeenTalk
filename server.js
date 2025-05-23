@@ -204,7 +204,7 @@ app.get("/", (req, res) => {
     }
   </script>
 </body>
-</html>);
+</html>`);
 });
 
 // Profile update route
