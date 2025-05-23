@@ -1,84 +1,63 @@
-// server.js
+// Full KeenTalk-style backend server
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
+
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+const io = new Server(server, {
+  cors: {
+    origin: "*"
+  }
+});
 
 app.use(cors());
-app.use(express.json());
 
-// In-memory storage
-const users = {};
-const sockets = {};
-const friends = {};
-const rooms = {};
-
-function notify(socket, message) {
-  socket.emit("notification", message);
-}
-
-app.post("/register", (req, res) => {
-  const { username, password } = req.body;
-  if (users[username]) return res.status(400).send("User already exists.");
-  users[username] = { password };
-  friends[username] = [];
-  res.send("Registered successfully.");
-});
-
-app.post("/login", (req, res) => {
-  const { username, password } = req.body;
-  if (!users[username] || users[username].password !== password)
-    return res.status(400).send("Invalid credentials.");
-  res.send("Login successful.");
-});
-
-app.post("/add-friend", (req, res) => {
-  const { from, to } = req.body;
-  if (!users[to]) return res.status(404).send("User not found.");
-  friends[from].push(to);
-  if (sockets[to]) notify(sockets[to], `${from} added you as a friend`);
-  res.send("Friend added.");
-});
+const users = {};      // socket.id -> username
+const rooms = {};      // room name -> array of socket ids
+const friends = {};    // socket.id -> array of friend socket ids
 
 io.on("connection", (socket) => {
-  let currentUser = "";
-
-  socket.on("login", (username) => {
-    currentUser = username;
-    sockets[username] = socket;
-    socket.emit("joined", `Welcome ${username}`);
+  socket.on("register", (username) => {
+    users[socket.id] = username;
+    socket.emit("registered", username);
   });
 
-  socket.on("join-room", (room) => {
+  socket.on("joinRoom", (room) => {
     socket.join(room);
     if (!rooms[room]) rooms[room] = [];
-    rooms[room].push(currentUser);
-    io.to(room).emit("chat", `${currentUser} joined room ${room}`);
-  });
-
-  socket.on("leave-room", (room) => {
-    socket.leave(room);
-    if (rooms[room])
-      rooms[room] = rooms[room].filter((user) => user !== currentUser);
-    io.to(room).emit("chat", `${currentUser} left room ${room}`);
+    if (!rooms[room].includes(socket.id)) {
+      rooms[room].push(socket.id);
+    }
+    io.to(room).emit("chat", `${users[socket.id]} joined ${room}`);
   });
 
   socket.on("chat", ({ room, message }) => {
-    io.to(room).emit("chat", `${currentUser}: ${message}`);
+    if (rooms[room] && rooms[room].includes(socket.id)) {
+      io.to(room).emit("chat", `${users[socket.id]}: ${message}`);
+    }
   });
 
-  socket.on("voice-signal", ({ to, signal }) => {
-    if (sockets[to]) sockets[to].emit("voice-signal", { from: currentUser, signal });
+  socket.on("addFriend", (targetId) => {
+    if (!friends[socket.id]) friends[socket.id] = [];
+    if (!friends[targetId]) friends[targetId] = [];
+    if (!friends[socket.id].includes(targetId)) {
+      friends[socket.id].push(targetId);
+    }
+    io.to(targetId).emit("notify", `${users[socket.id]} sent you a friend invite!`);
   });
 
   socket.on("disconnect", () => {
-    delete sockets[currentUser];
+    const username = users[socket.id];
+    delete users[socket.id];
+    delete friends[socket.id];
+    for (const room in rooms) {
+      rooms[room] = rooms[room].filter(id => id !== socket.id);
+    }
   });
 });
 
 server.listen(3000, () => {
-  console.log("Server running on port 3000");
+  console.log("KeenTalk backend running at http://localhost:3000");
 });
