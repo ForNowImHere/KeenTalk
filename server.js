@@ -1,46 +1,36 @@
-const express = require('express');
-const multer = require('multer');
-const cors = require('cors');
-const path = require('path');
-
+const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// CORS support for your frontend
-app.use(cors());
-
-// Serve static files from the "public" folder
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Setup multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname);
-  }
-});
-const upload = multer({ storage });
-
-// Ensure uploads folder exists
-const fs = require('fs');
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir);
-}
-
-// Upload route
-app.post('/upload', upload.single('file'), (req, res) => {
-  console.log('File received:', req.file);
-  res.json({ status: 'ok', file: req.file });
+// This will serve actual HTML to your browser
+app.get("/", (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>KeenTalk</title>
+        <style>
+          body {
+            background-color: #111;
+            color: #0f0;
+            font-family: monospace;
+            text-align: center;
+            padding-top: 20vh;
+          }
+          h1 {
+            font-size: 3em;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>Welcome to KeenTalk</h1>
+        <p>Your single-file app is alive and talking.</p>
+      </body>
+    </html>
+  `);
 });
 
-// Basic test route
-app.get('/', (req, res) => {
-  res.send('KeenTalk backend is running!');
-});
-
+// THIS message is for the terminal — not the browser
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  console.log("KeenTalk backend is running on port " + PORT);
 });
