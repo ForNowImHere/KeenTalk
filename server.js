@@ -1,63 +1,64 @@
-// Full KeenTalk-style backend server
-const express = require("express");
-const http = require("http");
-const { Server } = require("socket.io");
-const cors = require("cors");
-
+const express = require('express');
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: "*"
-  }
+const http = require('http').createServer(app);
+const io = require('socket.io')(http);
+
+// Serve HTML directly at /
+app.get('/', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>KeenTalk</title>
+    </head>
+    <body>
+      <h1>Welcome to KeenTalk!</h1>
+      <input id="name" placeholder="Your name" />
+      <input id="message" placeholder="Message" />
+      <button onclick="send()">Send</button>
+      <ul id="chat"></ul>
+
+      <script src="/socket.io/socket.io.js"></script>
+      <script>
+        const socket = io();
+        const nameInput = document.getElementById('name');
+        const msgInput = document.getElementById('message');
+        const chat = document.getElementById('chat');
+
+        function send() {
+          const msg = msgInput.value;
+          const name = nameInput.value;
+          if (!name || !msg) return;
+          socket.emit('chat message', { name, msg });
+          msgInput.value = '';
+        }
+
+        socket.on('chat message', (data) => {
+          const li = document.createElement('li');
+          li.textContent = data.name + ": " + data.msg;
+          chat.appendChild(li);
+        });
+      </script>
+    </body>
+    </html>
+  `);
 });
 
-app.use(cors());
+// Chat server
+io.on('connection', (socket) => {
+  console.log('User connected');
 
-const users = {};      // socket.id -> username
-const rooms = {};      // room name -> array of socket ids
-const friends = {};    // socket.id -> array of friend socket ids
-
-io.on("connection", (socket) => {
-  socket.on("register", (username) => {
-    users[socket.id] = username;
-    socket.emit("registered", username);
+  socket.on('chat message', (data) => {
+    io.emit('chat message', data); // broadcast to all
   });
 
-  socket.on("joinRoom", (room) => {
-    socket.join(room);
-    if (!rooms[room]) rooms[room] = [];
-    if (!rooms[room].includes(socket.id)) {
-      rooms[room].push(socket.id);
-    }
-    io.to(room).emit("chat", `${users[socket.id]} joined ${room}`);
-  });
-
-  socket.on("chat", ({ room, message }) => {
-    if (rooms[room] && rooms[room].includes(socket.id)) {
-      io.to(room).emit("chat", `${users[socket.id]}: ${message}`);
-    }
-  });
-
-  socket.on("addFriend", (targetId) => {
-    if (!friends[socket.id]) friends[socket.id] = [];
-    if (!friends[targetId]) friends[targetId] = [];
-    if (!friends[socket.id].includes(targetId)) {
-      friends[socket.id].push(targetId);
-    }
-    io.to(targetId).emit("notify", `${users[socket.id]} sent you a friend invite!`);
-  });
-
-  socket.on("disconnect", () => {
-    const username = users[socket.id];
-    delete users[socket.id];
-    delete friends[socket.id];
-    for (const room in rooms) {
-      rooms[room] = rooms[room].filter(id => id !== socket.id);
-    }
+  socket.on('disconnect', () => {
+    console.log('User disconnected');
   });
 });
 
-server.listen(3000, () => {
-  console.log("KeenTalk backend running at http://localhost:3000");
+// Start server
+const PORT = process.env.PORT || 3000;
+http.listen(PORT, () => {
+  console.log(`KeenTalk server running on http://localhost:${PORT}`);
 });
