@@ -107,7 +107,7 @@ io.on('connection', (socket) => {
   socket.on('join room', (room) => {
     socket.join(room);
     socket.room = room;
-    console.log(\`User joined room: \${room}\`);
+    console.log(`User joined room: ${room}`);
   });
 
   socket.on('chat message', (data) => {
