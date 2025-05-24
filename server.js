@@ -1,42 +1,40 @@
-// server.js
-
-const express = require('express');
-const cors = require('cors');
 const http = require('http');
-const { Server } = require('socket.io');
 
 const PORT = process.env.PORT || 3000;
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: '*',
-  },
+
+const htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>KeenTalk</title>
+  <style>
+    body {
+      background-color: black;
+      color: white;
+      font-family: sans-serif;
+      text-align: center;
+      padding-top: 100px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌑 KeenTalk Server is ALIVE</h1>
+  <p>You made it. HTML is working.</p>
+</body>
+</html>
+`;
+
+const server = http.createServer((req, res) => {
+  if (req.url === '/' || req.url === '/index.html') {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    res.end(htmlContent);
+  } else {
+    res.writeHead(404);
+    res.end('Not found');
+  }
 });
 
-app.use(cors());
-app.use(express.json());
-
-// Example base route
-app.get('/', (req, res) => {
-  res.send('🌑 KeenTalk Server is alive!');
-});
-
-// Socket.io logic
-io.on('connection', (socket) => {
-  console.log(`🔌 New client connected: ${socket.id}`);
-
-  socket.on('chat message', (msg) => {
-    console.log(`💬 Message from ${socket.id}: ${msg}`);
-    io.emit('chat message', msg); // Broadcast to all clients
-  });
-
-  socket.on('disconnect', () => {
-    console.log(`❌ Client disconnected: ${socket.id}`);
-  });
-});
-
-// Start the server
 server.listen(PORT, () => {
-  console.log(`🌑 KeenTalk running on http://localhost:${PORT}`);
+  console.log(`🌑 KeenTalk running at http://localhost:${PORT}`);
 });
